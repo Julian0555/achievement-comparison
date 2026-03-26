@@ -169,11 +169,9 @@ FresnelMaterial.onBeforeCompile = (shader) => {
 		#include <clipping_planes_pars_fragment>
 		void main() {
             #ifdef disableDiffuse
-			vec4 diffuseColor = vec4( 0.0, 0.0, 0.0, opacity );
+				vec4 diffuseColor = vec4( vec3(1.0), opacity );
             #else
-			vec4 diffuseColor = vec4( diffuse, opacity );
-			//vec3 fresnelColor = vec3(5.0, 0.0, 0.0);
-			//vec4 diffuseColor = vec4( 0, 0, 0, opacity);
+				vec4 diffuseColor = vec4( diffuse, opacity );
             #endif
 			#include <clipping_planes_fragment>
 			ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
@@ -181,14 +179,19 @@ FresnelMaterial.onBeforeCompile = (shader) => {
             vec3 totalEmissiveRadiance = emissive;
         #ifdef enableFresnel
             vec3 hsldiffuse = rgb2hsv(texture2D(map, vUv).rgb);
-            hsldiffuse.y = 0.7;
-            hsldiffuse.z = 1.0;
-            //diffuse * 5.0
+        	#ifdef isJacket
+				hsldiffuse.y = hsldiffuse.y * 1.5;
+				hsldiffuse.z = 0.8;
+			#else
+				hsldiffuse.y = 0.7;
+				hsldiffuse.z = 1.0;
+			#endif
             totalEmissiveRadiance += mix(vec3(0.0), hsv2rgb(hsldiffuse) * 0.1, vFresnel);
-            //diffuseColor = vec4( hsv2rgb(hsldiffuse), opacity);
         #endif
             #include <logdepthbuf_fragment>
-			#include <map_fragment>
+			#ifndef disableDiffuse
+				#include <map_fragment>
+			#endif
 			#include <color_fragment>
 			#include <alphamap_fragment>
 			#include <alphatest_fragment>
@@ -224,5 +227,8 @@ FresnelMaterial.onBeforeCompile = (shader) => {
 			#include <fog_fragment>
 			#include <premultiplied_alpha_fragment>
 			#include <dithering_fragment>
+            #ifdef disableShading
+				gl_FragColor.rgb = pow(texture2D(map, vUv).rgb, vec3(1.0/2.2));
+			#endif
 		}`;
 };
